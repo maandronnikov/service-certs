@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Certificate</title>
+</head>
+<body>
+    <h1>Добавление сертификата</h1>
+    <form action="/add_certificate" method="post">
+        <label for="hostname">Hostname:</label><br>
+        <input type="text" id="hostname" name="hostname"><br>
+        <label for="common_name">Common Name:</label><br>
+        <input type="text" id="common_name" name="common_name"><br>
+        <label for="expiration_date">Дата:</label><br>
+        <input type="date" id="expiration_date" name="expiration_date"><br>
+        <label for="serial_number">Серийный номер:</label><br>
+        <input type="text" id="serial_number" name="serial_number"><br><br>
+        <input type="submit" value="Добавить">
+    </form>
+    <br>
+    <a href="/view_certificates"><button>View All Certificates</button></a>
+    <a href="/view_expiring_certificates"><button>View Expiring Certificates</button></a>
+</body>
+</html>

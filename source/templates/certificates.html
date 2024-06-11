@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Certificates</title>
+</head>
+<body>
+    <h1>All Certificates</h1>
+    <ul>
+        {% for certificate in certificates %}
+            <li>
+                Hostname: {{ certificate.hostname }}<br>
+                Common Name: {{ certificate.common_name }}<br>
+                Expiration Date: {{ certificate.expiration_date }}<br>
+                Serial Number: {{ certificate.serial_number }}<br><br>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
