@@ -72,19 +72,15 @@ def login():
         email = request.form['email']
         password = request.form['password']
         user = User.query.filter_by(email=email).first()
-        if user:
-            if check_password_hash(user.password, password):
-                login_user(user, remember=True)
-                flash('Login successful.', 'success')
-                app.logger.info(f"User {email} logged in successfully.")
-                return redirect(url_for('index'))
-            else:
-                flash('Incorrect password.', 'error')
-                app.logger.warning(f"User {email} attempted to login with incorrect password.")
+        if user and check_password_hash(user.password, password):
+            login_user(user, remember=True)
+            flash('Login successful.', 'success')
+            app.logger.info(f"User {email} logged in successfully.")
+            return redirect(url_for('index'))
         else:
-            flash('User not found.', 'error')
-            app.logger.warning(f"Login attempt with non-existing email {email}.")
-    return render_template('login.html')
+            flash('Incorrect email or password.', 'error')
+            app.logger.warning(f"Failed login attempt for {email}.")
+    return render_template('login2.0.html')
 
 @app.route('/logout')
 @login_required

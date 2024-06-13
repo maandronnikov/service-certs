@@ -1,18 +1,24 @@
-<div style="width: 1920px; height: 1080px; background: rgba(1.60, 0.96, 32.94, 0.88)"></div>
-<img style="width: 962px; height: 1080px" src="https://via.placeholder.com/962x1080" />
-<div style="width: 412px; height: 84px; color: white; font-size: 64px; font-family: Inter; font-weight: 400; word-wrap: break-word">Авторизация</div>
-<div style="width: 151px; height: 50px; color: white; font-size: 40px; font-family: Inter; font-weight: 400; word-wrap: break-word">Пароль</div>
-<div style="width: 606px; height: 0px; border: 1px #0B4D8A solid"></div>
-<div style="width: 606px; height: 0px; border: 1px #0B4D8A solid"></div>
-<div style="width: 306px; height: 35px; color: white; font-size: 20px; font-family: Inter; font-weight: 400; text-decoration: underline; word-wrap: break-word">v.onishchuk@centrofinanc.ru</div>
-<div style="width: 151px; height: 50px; color: white; font-size: 40px; font-family: Inter; font-weight: 400; word-wrap: break-word">Логин</div>
-<div style="width: 222px; height: 15px; position: relative">
-  <div style="width: 19px; height: 15px; left: 0px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 58px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 87px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 116px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 145px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 174px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 203px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-  <div style="width: 19px; height: 15px; left: 29px; top: 0px; position: absolute; background: #0B4D8A; border-radius: 9999px; border: 1px #0B4D8A solid"></div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <div style="width: 1922px; height: 1080px; position: relative">
+        <div style="width: 1920px; height: 1080px; left: 0px; top: 0px; position: absolute; background: #020121"></div>
+        <div style="width: 412px; height: 84px; left: 282px; top: 335px; position: absolute; color: white; font-size: 64px; font-family: Inter; font-weight: 400; word-wrap: break-word">Авторизация</div>
+        <div style="width: 151px; height: 50px; left: 185px; top: 643px; position: absolute; color: white; font-size: 40px; font-family: Inter; font-weight: 400; word-wrap: break-word">Пароль</div>
+        <div style="width: 151px; height: 50px; left: 185px; top: 497px; position: absolute; color: white; font-size: 40px; font-family: Inter; font-weight: 400; word-wrap: break-word">Логин</div>
+        <div style="width: 606px; height: 0px; left: 185px; top: 606px; position: absolute; border: 1px #0B4D8A solid"></div>
+        <div style="width: 606px; height: 0px; left: 185px; top: 744px; position: absolute; border: 1px #0B4D8A solid"></div>
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="text" name="email" style="width: 306px; height: 35px; left: 185px; top: 571px; position: absolute; color: white; font-size: 20px; font-family: Inter; font-weight: 400; text-decoration: underline; word-wrap: break-word" placeholder="Введите логин">
+            <input type="password" name="password" style="width: 306px; height: 35px; left: 185px; top: 715px; position: absolute; color: white; font-size: 20px; font-family: Inter; font-weight: 400; word-wrap: break-word" placeholder="Введите пароль">
+            <button type="submit" style="width: 222px; height: 50px; left: 185px; top: 765px; position: absolute; background: #0B4D8A; color: white; font-size: 20px; font-family: Inter; font-weight: 400; border: none; cursor: pointer">Войти</button>
+        </form>
+        <img style="width: 962px; height: 1080px; left: 960px; top: 0px; position: absolute" src="{{ url_for('static', filename='pictures/jaba.png') }}" />
+    </div>
+</body>
+</html>
