@@ -20,7 +20,7 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
@@ -64,6 +64,7 @@ def add_cert():
     expiration_date = datetime.strptime(expiration_date_str, '%Y-%m-%d')
     serial_number = request.form['serial_number']
     add_certificate(hostname, common_name, expiration_date, serial_number)
+    flash('Certificate added successfully.', 'success')
     return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -86,7 +87,9 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    flash('Logged out successfully.', 'info')
+    return redirect(url_for('login'))  # Изменено перенаправление на страницу login
+
 
 if __name__ == '__main__':
     app.run(debug=True)
