@@ -7,8 +7,8 @@ from flask_migrate import Migrate
 import requests
 import pandas as pd
 import os
-import base64
-import requests
+import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from models.db import db, User, Certificate, Role
 
@@ -36,22 +36,24 @@ def unauthorized_callback():
 
 
 def add_certificate(hostname, common_name, expiration_date, serial_number):
-    certificate = Certificate(hostname=hostname, common_name=common_name, expiration_date=expiration_date,
-                              serial_number=serial_number)
-    db.session.add(certificate)
-    db.session.commit()
+    with app.app_context():
+        certificate = Certificate(hostname=hostname, common_name=common_name, expiration_date=expiration_date,
+                                  serial_number=serial_number)
+        db.session.add(certificate)
+        db.session.commit()
 
 
 def get_all_certificates():
-    return Certificate.query.all()
+    with app.app_context():
+        return Certificate.query.all()
 
 
-def get_expiring_certificates():
-    two_months_later = datetime.now() + timedelta(days=60)
-    return Certificate.query.filter(Certificate.expiration_date <= two_months_later).all()
+def get_expiring_certificates_within_days(days):
+    with app.app_context():
+        date_later = datetime.now() + timedelta(days=days)
+        return Certificate.query.filter(Certificate.expiration_date <= date_later).all()
 
 
-# Используется для работы с чатом
 def send_yandex_notification(message):
     token = 'y0_AgAAAAB2zmtUAATIlgAAAAEH9VmaAACr-yuiXKVEnqYiyoiGiI7SZhiamw'  # Токен
     chat_id = '0/0/b06ba50c-e026-43fc-8603-69334b06da5d'  # ID чата
@@ -69,15 +71,15 @@ def send_yandex_notification(message):
     }
 
     response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code == 200:
+        app.logger.info("Уведомление успешно отправлено.")
+    else:
+        app.logger.error(f"Ошибка при отправке уведомления: {response.status_code} {response.text}")
+
     return response.json()
 
 
-massage = "Привет!"
-response = send_yandex_notification(massage)
-print(response)
-
-
-# Создает чат
 def create_yandex_notification(chanel_name):
     token = 'y0_AgAAAAB2zmtUAATIlgAAAAEH9VmaAACr-yuiXKVEnqYiyoiGiI7SZhiamw'  # Токен
 
@@ -92,16 +94,51 @@ def create_yandex_notification(chanel_name):
         "name": chanel_name,
         "description": "Тест канал",
         "admins": [{"login": "v.onishchuk@centrofinans.ru"}]
-
     }
 
     response = requests.post(url, headers=headers, json=data)
     return response.json()
 
 
-#chanel_name = "Перевыпуски Сертификатов"
-#response = create_yandex_notification(chanel_name)
-#print(response)
+def check_certificates_and_send_notification():
+    with app.app_context():
+        certificates = get_expiring_certificates_within_days(60)
+        if certificates:
+            # Отправляем уведомление только если оно еще не было отправлено сегодня
+            if not notification_already_sent_today():
+                messages = []
+                for cert in certificates:
+                    messages.append(f"{cert.hostname} истекает {cert.expiration_date.strftime('%d.%m.%Y')}")
+                full_message = "\n".join(messages)
+                send_yandex_notification(full_message)
+                mark_notification_as_sent_today()
+        else:
+            send_yandex_notification("Нет сертификатов, истекающих в ближайшие 60 дней.")
+
+
+def notification_already_sent_today():
+    # Здесь должна быть проверка, было ли уже отправлено уведомление сегодня
+    # Например, можно использовать переменную, файл или базу данных для хранения этого состояния
+    return False  # Пока просто возвращаем False
+
+
+def mark_notification_as_sent_today():
+    # Здесь нужно отметить, что уведомление было отправлено сегодня
+    # Например, устанавливаем переменную, записываем в файл или обновляем запись в базе данных
+    pass  # Пока просто пропускаем эту функцию
+
+
+@app.route('/yandex_bot_webhook', methods=['POST'])
+def yandex_bot_webhook():
+    data = request.json
+    app.logger.info(f"Получено сообщение: {data}")
+
+    if 'message' in data:
+        message_text = data['message']['text']
+        if message_text.lower() == 'повторить':
+            check_certificates_and_send_notification()
+
+    return jsonify({"status": "ok"})
 
 
 @app.route('/update_certificate/<int:certificate_id>', methods=['POST'])
@@ -134,14 +171,16 @@ def index():
 @app.route('/view_certificates', methods=['GET'])
 @login_required
 def view_certificates():
-    certificates = get_all_certificates()
+    with app.app_context():
+        certificates = get_all_certificates()
     return render_template('certificates.html', certificates=certificates)
 
 
 @app.route('/view_expiring_certificates', methods=['GET'])
 @login_required
 def view_expiring_certificates():
-    expiring_certificates = get_expiring_certificates()
+    with app.app_context():
+        expiring_certificates = get_expiring_certificates_within_days(60)
     return render_template('certificates.html', certificates=expiring_certificates)
 
 
@@ -212,22 +251,34 @@ def logout():
 @app.route('/export_certificates', methods=['GET'])
 @login_required
 def export_certificates():
-    certificates = get_all_certificates()
-    data = []
-    for cert in certificates:
-        data.append({
-            "Hostname": cert.hostname,
-            "Common Name": cert.common_name,
-            "Expiration Date": cert.expiration_date.strftime('%Y-%m-%d'),
-            "Serial Number": cert.serial_number
-        })
+    with app.app_context():
+        certificates = get_all_certificates()
+        data = []
+        for cert in certificates:
+            data.append({
+                "Hostname": cert.hostname,
+                "Common Name": cert.common_name,
+                "Expiration Date": cert.expiration_date.strftime('%d.%m.%Y'),
+                "Serial Number": cert.serial_number
+            })
 
-    df = pd.DataFrame(data)
-    file_path = 'certificates.xlsx'
-    df.to_excel(file_path, index=False)
+        df = pd.DataFrame(data)
+        file_path = 'certificates.xlsx'
+        df.to_excel(file_path, index=False)
 
     return send_file(file_path, as_attachment=True, download_name='certificates.xlsx')
 
+
+# Инициализация планировщика
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=check_certificates_and_send_notification, trigger="interval", days=1)
+scheduler.start()
+
+# Завершение работы планировщика при завершении приложения
+atexit.register(lambda: scheduler.shutdown())
+
+# Отправка уведомления сразу при запуске приложения
+check_certificates_and_send_notification()
 
 if __name__ == '__main__':
     app.run(debug=True)
