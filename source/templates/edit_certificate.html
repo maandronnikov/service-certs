@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #2c3e50;
+            background-color: #1b1b1b;
             font-family: Arial, sans-serif;
             color: #ecf0f1;
         }
@@ -21,7 +21,7 @@
             align-items: center;
         }
         .form {
-            background-color: #34495e;
+            background-color: #2c2c2c;
             padding: 20px;
             border-radius: 10px;
             width: 400px;
@@ -31,11 +31,13 @@
             width: calc(100% - 20px);
             padding: 10px;
             margin: 10px 0;
-            border: 1px solid #ccc;
+            border: 1px solid #555;
             border-radius: 5px;
+            background-color: #3a3a3a; /* Тёмный синий для инпутов */
+            color: #ecf0f1; /* Белый цвет текста в инпутах */
         }
         .form input[type="submit"] {
-            background-color: #3498db;
+            background-color: #555;
             color: white;
             padding: 10px 20px;
             border: none;
@@ -43,7 +45,7 @@
             cursor: pointer;
         }
         .form input[type="submit"]:hover {
-            background-color: #2980b9;
+            background-color: #3a3a3a;
         }
         .menu {
             margin-top: 20px;
@@ -53,11 +55,11 @@
             color: #ecf0f1;
             padding: 10px;
             border-radius: 5px;
-            background-color: #3498db;
+            background-color: #555;
             margin: 0 5px;
         }
         .menu a:hover {
-            background-color: #2980b9;
+            background-color: #3a3a3a;
         }
         .logout {
             position: absolute;
@@ -82,19 +84,19 @@
     </div>
     <div class="container">
         <div class="form">
-            <h2>Edit Certificate</h2>
+            <h2>Редактирование сертификата</h2>
             <form action="{{ url_for('update_certificate', certificate_id=certificate.id) }}" method="POST">
                 <input type="text" name="hostname" value="{{ certificate.hostname }}" required><br>
                 <input type="text" name="common_name" value="{{ certificate.common_name }}" required><br>
                 <input type="date" name="expiration_date" value="{{ certificate.expiration_date }}" required><br>
                 <input type="text" name="serial_number" value="{{ certificate.serial_number }}" required><br>
-                <input type="submit" value="Update">
+                <input type="submit" value="Изменить">
             </form>
         </div>
         <div class="menu">
-            <a href="{{ url_for('view_certificates') }}">View All Certificates</a>
-            <a href="{{ url_for('view_expiring_certificates') }}">View Expiring Certificates</a>
-            <a href="{{ url_for('index') }}">Back to Home</a>
+            <a href="{{ url_for('view_certificates') }}">Все сертификаты</a>
+            <a href="{{ url_for('view_expiring_certificates') }}">Истекающие сертификаты</a>
+            <a href="{{ url_for('index') }}">Назад</a>
         </div>
     </div>
 </body>

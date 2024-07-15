@@ -278,7 +278,9 @@ scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
 # Отправка уведомления сразу при запуске приложения
-check_certificates_and_send_notification()
+#check_certificates_and_send_notification()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
+
+

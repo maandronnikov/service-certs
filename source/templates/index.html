@@ -1,101 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Добавление сертификата</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #2c3e50; /* Тёмный синий фон */
-      font-family: Arial, sans-serif;
-      color: #ecf0f1; /* Белый цвет текста */
-    }
-    .container {
-      width: 100%;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    .form {
-      background-color: #34495e; /* Серый фон для формы */
-      padding: 20px;
-      border-radius: 10px;
-      width: 400px;
-      text-align: center;
-    }
-    .form input[type="text"], .form input[type="date"] {
-      width: calc(100% - 20px);
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .form input[type="submit"] {
-      background-color: #3498db; /* Голубой цвет кнопки */
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .menu {
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-around;
-      width: 100%;
-    }
-    .menu a {
-      text-decoration: none;
-      color: #ecf0f1;
-      padding: 10px;
-      border-radius: 5px;
-      background-color: #3498db; /* Голубой цвет для ссылок */
-    }
-    .menu a:hover {
-      background-color: #2980b9; /* Цвет ссылки при наведении */
-    }
-    .logout {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-    }
-    .logout a {
-      text-decoration: none;
-      color: #ecf0f1;
-      padding: 10px;
-      border-radius: 5px;
-      background-color: #e74c3c; /* Красный цвет для кнопки выхода */
-    }
-    .logout a:hover {
-      background-color: #c0392b; /* Цвет кнопки при наведении */
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавление сертификата</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1b1b1b; /* Тёмный фон */
+            font-family: Arial, sans-serif;
+            color: #f0f0f0; /* Белый цвет текста */
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .form {
+            background-color: #2c2c2c; /* Тёмно-серый фон для формы */
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            text-align: center;
+        }
+        .form input[type="text"], .form input[type="date"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background-color: #3a3a3a; /* Тёмный фон для полей ввода */
+            color: #f0f0f0; /* Белый цвет текста в полях ввода */
+        }
+        .form input[type="submit"] {
+            background-color: #555; /* Синий цвет кнопки */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form input[type="submit"]:hover {
+            background-color: #3a3a3a; /* Более тёмный синий цвет кнопки при наведении */
+        }
+        .menu {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        .menu a {
+            text-decoration: none;
+            color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #555; /* Тёмно-серый цвет для ссылок */
+        }
+        .menu a:hover {
+            background-color: #2c2c2c; /* Тёмный цвет ссылки при наведении */
+        }
+        .logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .logout a {
+            text-decoration: none;
+            color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e74c3c; /* Красный цвет для кнопки выхода */
+        }
+        .logout a:hover {
+            background-color: #c0392b; /* Более тёмный красный цвет кнопки при наведении */
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logout">
-      <a href="/logout">Выход</a>
+    <div class="container">
+        <div class="logout">
+            <a href="/logout">Выход</a>
+        </div>
+        <div class="form">
+            <h2>Добавление сертификата</h2>
+            <form action="/add_certificate" method="POST">
+                <input type="text" name="hostname" placeholder="Наименование" required><br>
+                <input type="text" name="common_name" placeholder="Кем выпущен" required><br>
+                <input type="date" name="expiration_date" placeholder="Дата истечения" required><br>
+                <input type="text" name="serial_number" placeholder="Серийный номер" required><br>
+                <input type="submit" value="Добавить">
+            </form>
+        </div>
+        <div class="menu">
+            <a href="/view_certificates">Просмотр всех сертификатов</a>
+            <a href="/view_expiring_certificates">Просмотр истекающих через 60 дней</a>
+            <a href="/export_certificates">Выгрузить сертификаты в Excel</a>
+        </div>
     </div>
-    <div class="form">
-      <h2>Добавление сертификата</h2>
-      <form action="/add_certificate" method="POST">
-        <input type="text" name="hostname" placeholder="Хостнейм" required><br>
-        <input type="text" name="common_name" placeholder="Общее имя" required><br>
-        <input type="date" name="expiration_date" placeholder="Дата истечения" required><br>
-        <input type="text" name="serial_number" placeholder="Серийный номер" required><br>
-        <input type="submit" value="Добавить">
-      </form>
-    </div>
-
-    <div class="menu">
-      <a href="/view_certificates">Просмотр всех сертификатов</a>
-      <a href="/view_expiring_certificates">Просмотр истекающих через 60 дней</a>
-      <a href="/export_certificates">Выгрузить сертификаты в Excel</a>
-    </div>
-  </div>
 </body>
 </html>
