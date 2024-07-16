@@ -54,61 +54,50 @@ def get_expiring_certificates_within_days(days):
         return Certificate.query.filter(Certificate.expiration_date <= date_later).all()
 
 
-def send_yandex_notification(message):
-    token = 'y0_AgAAAAB2zmtUAATIlgAAAAEH9VmaAACr-yuiXKVEnqYiyoiGiI7SZhiamw'  # Токен
-    chat_id = '0/0/b06ba50c-e026-43fc-8603-69334b06da5d'  # ID чата
+def send_yandex_request(endpoint, data):
+    token = os.getenv('Token_YandexMasage', 'Ключа нет')  # Токен
 
-    url = 'https://botapi.messenger.yandex.net/bot/v1/messages/sendText/'
+    url = f'https://botapi.messenger.yandex.net/bot/v1/{endpoint}'
 
     headers = {
         'Authorization': f'OAuth {token}',
-        'Content-Type': 'application/json'
-    }
-
-    data = {
-        'chat_id': chat_id,
-        'text': message
+        'Content-Type': 'application/json; charset=utf-8'
     }
 
     response = requests.post(url, headers=headers, json=data)
 
     if response.status_code == 200:
-        app.logger.info("Уведомление успешно отправлено.")
+        app.logger.info("Запрос успешно выполнен.")
     else:
-        app.logger.error(f"Ошибка при отправке уведомления: {response.status_code} {response.text}")
+        app.logger.error(f"Ошибка при выполнении запроса: {response.status_code} {response.text}")
 
     return response.json()
 
 
-def create_yandex_notification(chanel_name):
-    token = 'y0_AgAAAAB2zmtUAATIlgAAAAEH9VmaAACr-yuiXKVEnqYiyoiGiI7SZhiamw'  # Токен
-
-    url = 'https://botapi.messenger.yandex.net/bot/v1/chats/create/'
-
-    headers = {
-        'Authorization': f'OAuth {token}',
-        'Content-Type': 'application/json'
-    }
-
+def send_yandex_notification(message):
+    chat_id = '0/0/b06ba50c-e026-43fc-8603-69334b06da5d'  # ID чата
     data = {
-        "name": chanel_name,
-        "description": "Тест канал",
-        "admins": [{"login": "v.onishchuk@centrofinans.ru"}]
+        'chat_id': chat_id,
+        'text': message
     }
+    return send_yandex_request('messages/sendText/', data)
 
-    response = requests.post(url, headers=headers, json=data)
-    return response.json()
+
+#def create_yandex_notification(channel_name): #Это часть кода используется для создания нового чата
+#    data = {
+#        "name": channel_name,
+#        "description": "Тест канал",
+#        "admins": [{"login": "v.onishchuk@centrofinans.ru"}]
+#    }
+#    return send_yandex_request('chats/create/', data)
 
 
 def check_certificates_and_send_notification():
     with app.app_context():
         certificates = get_expiring_certificates_within_days(60)
         if certificates:
-            # Отправляем уведомление только если оно еще не было отправлено сегодня
             if not notification_already_sent_today():
-                messages = []
-                for cert in certificates:
-                    messages.append(f"{cert.hostname} истекает {cert.expiration_date.strftime('%d.%m.%Y')}")
+                messages = [f"{cert.hostname} истекает {cert.expiration_date.strftime('%d.%m.%Y')}" for cert in certificates]
                 full_message = "\n".join(messages)
                 send_yandex_notification(full_message)
                 mark_notification_as_sent_today()
@@ -117,14 +106,12 @@ def check_certificates_and_send_notification():
 
 
 def notification_already_sent_today():
-    # Здесь должна быть проверка, было ли уже отправлено уведомление сегодня
-    # Например, можно использовать переменную, файл или базу данных для хранения этого состояния
+    # Добавить проверку, было ли отправлено уведомление сегодня
     return False  # Пока просто возвращаем False
 
 
 def mark_notification_as_sent_today():
     # Здесь нужно отметить, что уведомление было отправлено сегодня
-    # Например, устанавливаем переменную, записываем в файл или обновляем запись в базе данных
     pass  # Пока просто пропускаем эту функцию
 
 
@@ -282,5 +269,3 @@ atexit.register(lambda: scheduler.shutdown())
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
-
-
