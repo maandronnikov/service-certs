@@ -210,6 +210,33 @@ def delete_certificate(certificate_id):
     logging.info(f"Deleted certificate {certificate_id} for {certificate.hostname}")
     return redirect(url_for('view_certificates'))
 
+
+@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def edit_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if request.method == 'POST':
+        user.email = request.form['email']
+        if request.form['password']:
+            user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
+        db.session.commit()
+        flash('User updated successfully.', 'success')
+        logging.info(f"User {user.email} updated successfully.")
+        return redirect(url_for('user_admin'))
+    return render_template('edit_user.html', user=user)
+
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted successfully.', 'success')
+    logging.info(f"User {user.email} deleted successfully.")
+    return redirect(url_for('user_admin'))
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -254,6 +281,7 @@ def export_certificates():
     logging.info("Exported certificates to certificates.xlsx")
     return send_file(file_path, as_attachment=True, download_name='certificates.xlsx')
 
+
 @app.route('/user', methods=['GET', 'POST'])
 @login_required
 def user_admin():
@@ -264,7 +292,10 @@ def user_admin():
         flash('User added successfully.', 'success')
         logging.info(f"User {email} added successfully.")
         return redirect(url_for('user_admin'))
-    return render_template('add_user.html')
+
+    users = User.query.all()
+    return render_template('user_admin.html', users=users)
+
 
 # Инициализация планировщика
 scheduler = BackgroundScheduler()
