@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
@@ -9,7 +10,6 @@ import pandas as pd
 import os
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
-
 from models.db import db, User, Certificate, Role
 
 app = Flask(__name__)
@@ -23,17 +23,24 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
 
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     flash('You must be logged in to view this page.', 'error')
     return redirect(url_for('login'))
-
 
 def add_certificate(hostname, common_name, expiration_date, serial_number):
     with app.app_context():
@@ -41,21 +48,19 @@ def add_certificate(hostname, common_name, expiration_date, serial_number):
                                   serial_number=serial_number)
         db.session.add(certificate)
         db.session.commit()
-
+        logging.info(f"Added certificate for {hostname} expiring on {expiration_date}")
 
 def get_all_certificates():
     with app.app_context():
         return Certificate.query.all()
-
 
 def get_expiring_certificates_within_days(days):
     with app.app_context():
         date_later = datetime.now() + timedelta(days=days)
         return Certificate.query.filter(Certificate.expiration_date <= date_later).all()
 
-
 def send_yandex_request(endpoint, data):
-    token = os.getenv('Token_YandexMasage', 'Ключа нет')  # Токен
+    token = os.getenv('Token_YandexMasage', 'Ключа нет')
 
     url = f'https://botapi.messenger.yandex.net/bot/v1/{endpoint}'
 
@@ -67,30 +72,27 @@ def send_yandex_request(endpoint, data):
     response = requests.post(url, headers=headers, json=data)
 
     if response.status_code == 200:
-        app.logger.info("Запрос успешно выполнен.")
+        logging.info("Запрос успешно выполнен.")
     else:
-        app.logger.error(f"Ошибка при выполнении запроса: {response.status_code} {response.text}")
+        logging.error(f"Ошибка при выполнении запроса: {response.status_code} {response.text}")
 
     return response.json()
 
-
 def send_yandex_notification(message):
-    chat_id = '0/0/b06ba50c-e026-43fc-8603-69334b06da5d'  # ID чата
+    chat_id = '0/0/b06ba50c-e026-43fc-8603-69334b06da5d'
     data = {
         'chat_id': chat_id,
         'text': message
     }
     return send_yandex_request('messages/sendText/', data)
 
-
-#def create_yandex_notification(channel_name): #Это часть кода используется для создания нового чата
-#    data = {
-#        "name": channel_name,
-#        "description": "Тест канал",
-#        "admins": [{"login": "v.onishchuk@centrofinans.ru"}]
-#    }
-#    return send_yandex_request('chats/create/', data)
-
+# def create_yandex_notification(channel_name):
+#     data = {
+#         "name": channel_name,
+#         "description": "Тест канал",
+#         "admins": [{"login": "v.onishchuk@centrofinans.ru"}]
+#     }
+#     return send_yandex_request('chats/create/', data)
 
 def check_certificates_and_send_notification():
     with app.app_context():
@@ -104,21 +106,16 @@ def check_certificates_and_send_notification():
         else:
             send_yandex_notification("Нет сертификатов, истекающих в ближайшие 60 дней.")
 
-
 def notification_already_sent_today():
-    # Добавить проверку, было ли отправлено уведомление сегодня
-    return False  # Пока просто возвращаем False
-
+    return False
 
 def mark_notification_as_sent_today():
-    # Здесь нужно отметить, что уведомление было отправлено сегодня
-    pass  # Пока просто пропускаем эту функцию
-
+    pass
 
 @app.route('/yandex_bot_webhook', methods=['POST'])
 def yandex_bot_webhook():
     data = request.json
-    app.logger.info(f"Получено сообщение: {data}")
+    logging.info(f"Получено сообщение: {data}")
 
     if 'message' in data:
         message_text = data['message']['text']
@@ -126,7 +123,6 @@ def yandex_bot_webhook():
             check_certificates_and_send_notification()
 
     return jsonify({"status": "ok"})
-
 
 @app.route('/update_certificate/<int:certificate_id>', methods=['POST'])
 @login_required
@@ -139,8 +135,8 @@ def update_certificate(certificate_id):
     certificate.serial_number = request.form['serial_number']
     db.session.commit()
     flash('Certificate updated successfully.', 'success')
+    logging.info(f"Updated certificate {certificate_id} for {certificate.hostname}")
     return redirect(url_for('view_certificates'))
-
 
 @app.route('/test_notification', methods=['GET'])
 @login_required
@@ -149,11 +145,9 @@ def test_notification():
     response = send_yandex_notification(message)
     return jsonify(response)
 
-
 @app.route('/')
 def index():
     return render_template('index.html')
-
 
 @app.route('/view_certificates', methods=['GET'])
 @login_required
@@ -162,14 +156,12 @@ def view_certificates():
         certificates = get_all_certificates()
     return render_template('certificates.html', certificates=certificates)
 
-
 @app.route('/view_expiring_certificates', methods=['GET'])
 @login_required
 def view_expiring_certificates():
     with app.app_context():
         expiring_certificates = get_expiring_certificates_within_days(60)
     return render_template('certificates.html', certificates=expiring_certificates)
-
 
 @app.route('/add_certificate', methods=['POST'])
 @login_required
@@ -181,8 +173,8 @@ def add_cert():
     serial_number = request.form['serial_number']
     add_certificate(hostname, common_name, expiration_date, serial_number)
     flash('Certificate added successfully.', 'success')
+    logging.info(f"Added certificate for {hostname} expiring on {expiration_date}")
     return redirect(url_for('index'))
-
 
 @app.route('/edit_certificate/<int:certificate_id>', methods=['GET', 'POST'])
 @login_required
@@ -196,9 +188,9 @@ def edit_certificate(certificate_id):
         certificate.serial_number = request.form['serial_number']
         db.session.commit()
         flash('Certificate updated successfully.', 'success')
+        logging.info(f"Updated certificate {certificate_id} for {certificate.hostname}")
         return redirect(url_for('view_certificates'))
     return render_template('edit_certificate.html', certificate=certificate)
-
 
 @app.route('/delete_certificate/<int:certificate_id>', methods=['POST'])
 @login_required
@@ -207,8 +199,8 @@ def delete_certificate(certificate_id):
     db.session.delete(certificate)
     db.session.commit()
     flash('Certificate deleted successfully.', 'success')
+    logging.info(f"Deleted certificate {certificate_id} for {certificate.hostname}")
     return redirect(url_for('view_certificates'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -219,13 +211,12 @@ def login():
         if user and check_password_hash(user.password, password):
             login_user(user, remember=True)
             flash('Login successful.', 'success')
-            app.logger.info(f"User {email} logged in successfully.")
+            logging.info(f"User {email} logged in successfully.")
             return redirect(url_for('index'))
         else:
             flash('Incorrect email or password.', 'error')
-            app.logger.warning(f"Failed login attempt for {email}.")
+            logging.warning(f"Failed login attempt for {email}.")
     return render_template('login2.0.html')
-
 
 @app.route('/logout')
 @login_required
@@ -233,7 +224,6 @@ def logout():
     logout_user()
     flash('Logged out successfully.', 'info')
     return redirect(url_for('login'))
-
 
 @app.route('/export_certificates', methods=['GET'])
 @login_required
@@ -253,8 +243,8 @@ def export_certificates():
         file_path = 'certificates.xlsx'
         df.to_excel(file_path, index=False)
 
+    logging.info("Exported certificates to certificates.xlsx")
     return send_file(file_path, as_attachment=True, download_name='certificates.xlsx')
-
 
 # Инициализация планировщика
 scheduler = BackgroundScheduler()
