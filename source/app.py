@@ -112,6 +112,14 @@ def notification_already_sent_today():
 def mark_notification_as_sent_today():
     pass
 
+def add_user(email, password):
+    with app.app_context():
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(email=email, password=hashed_password, active=True)
+        db.session.add(new_user)
+        db.session.commit()
+        logging.info(f'User {email} has been created.')
+
 @app.route('/yandex_bot_webhook', methods=['POST'])
 def yandex_bot_webhook():
     data = request.json
@@ -245,6 +253,18 @@ def export_certificates():
 
     logging.info("Exported certificates to certificates.xlsx")
     return send_file(file_path, as_attachment=True, download_name='certificates.xlsx')
+
+@app.route('/user', methods=['GET', 'POST'])
+@login_required
+def user_admin():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        add_user(email, password)
+        flash('User added successfully.', 'success')
+        logging.info(f"User {email} added successfully.")
+        return redirect(url_for('user_admin'))
+    return render_template('add_user.html')
 
 # Инициализация планировщика
 scheduler = BackgroundScheduler()
