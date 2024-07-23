@@ -1,14 +1,25 @@
+import os
 import logging
+import atexit
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
-from flask_login import LoginManager, login_user, logout_user, login_required
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_migrate import Migrate
+
 import requests
 import pandas as pd
-import os
-import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask import (
+    Flask,
+    render_template,
+    request, redirect,
+    url_for,
+    flash,
+    jsonify,
+    send_file
+)
+
+from flask_login import LoginManager, login_user, logout_user, login_required
+from flask_migrate import Migrate
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from models.db import db, User, Certificate
 
 app = Flask(__name__)
@@ -24,7 +35,7 @@ login_manager.login_view = 'login'
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]',
+    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]', # noqa
     datefmt='%Y-%m-%d %H:%M:%S',
     handlers=[
         logging.FileHandler("app.log"),
@@ -54,7 +65,7 @@ def add_certificate(hostname, common_name, expiration_date, serial_number):
         )
         db.session.add(certificate)
         db.session.commit()
-        logging.info(f"Added certificate for {hostname} expiring on {expiration_date}")
+        logging.info(f"Added certificate for {hostname} expiring on {expiration_date}") # noqa
 
 
 def get_all_certificates():
@@ -82,7 +93,8 @@ def send_yandex_request(endpoint, data):
         logging.info("Запрос успешно выполнен.")
     else:
         logging.error(
-            f"Ошибка при выполнении запроса: {response.status_code} {response.text}"
+            f"Ошибка при выполнении запроса: "
+            f"{response.status_code} {response.text}"
         )
     return response.json()
 
