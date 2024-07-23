@@ -1,8 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from flask_login import LoginManager, login_user, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
 import requests
@@ -10,7 +9,7 @@ import pandas as pd
 import os
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
-from models.db import db, User, Certificate, Role
+from models.db import db, User, Certificate
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///certificates.db'
@@ -33,50 +32,60 @@ logging.basicConfig(
     ]
 )
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     flash('You must be logged in to view this page.', 'error')
     return redirect(url_for('login'))
 
+
 def add_certificate(hostname, common_name, expiration_date, serial_number):
     with app.app_context():
-        certificate = Certificate(hostname=hostname, common_name=common_name, expiration_date=expiration_date,
-                                  serial_number=serial_number)
+        certificate = Certificate(
+            hostname=hostname,
+            common_name=common_name,
+            expiration_date=expiration_date,
+            serial_number=serial_number
+        )
         db.session.add(certificate)
         db.session.commit()
         logging.info(f"Added certificate for {hostname} expiring on {expiration_date}")
+
 
 def get_all_certificates():
     with app.app_context():
         return Certificate.query.all()
 
+
 def get_expiring_certificates_within_days(days):
     with app.app_context():
         date_later = datetime.now() + timedelta(days=days)
-        return Certificate.query.filter(Certificate.expiration_date <= date_later).all()
+        return Certificate.query.filter(
+            Certificate.expiration_date <= date_later
+        ).all()
+
 
 def send_yandex_request(endpoint, data):
     token = os.getenv('Token_YandexMasage', 'Ключа нет')
-
     url = f'https://botapi.messenger.yandex.net/bot/v1/{endpoint}'
-
     headers = {
         'Authorization': f'OAuth {token}',
         'Content-Type': 'application/json; charset=utf-8'
     }
-
     response = requests.post(url, headers=headers, json=data)
-
     if response.status_code == 200:
         logging.info("Запрос успешно выполнен.")
     else:
-        logging.error(f"Ошибка при выполнении запроса: {response.status_code} {response.text}")
-
+        logging.error(
+            f"Ошибка при выполнении запроса: {response.status_code} {response.text}"
+        )
     return response.json()
+
 
 def send_yandex_notification(message):
     chat_id = '0/0/b06ba50c-e026-43fc-8603-69334b06da5d'
@@ -86,6 +95,7 @@ def send_yandex_notification(message):
     }
     return send_yandex_request('messages/sendText/', data)
 
+
 # def create_yandex_notification(channel_name):
 #     data = {
 #         "name": channel_name,
@@ -94,23 +104,30 @@ def send_yandex_notification(message):
 #     }
 #     return send_yandex_request('chats/create/', data)
 
+
 def check_certificates_and_send_notification():
     with app.app_context():
         certificates = get_expiring_certificates_within_days(60)
         if certificates:
             if not notification_already_sent_today():
-                messages = [f"{cert.hostname} истекает {cert.expiration_date.strftime('%d.%m.%Y')}" for cert in certificates]
+                messages = [
+                    f"{cert.hostname} истекает {cert.expiration_date.strftime('%d.%m.%Y')}"
+                    for cert in certificates
+                ]
                 full_message = "\n".join(messages)
                 send_yandex_notification(full_message)
                 mark_notification_as_sent_today()
         else:
             send_yandex_notification("Нет сертификатов, истекающих в ближайшие 60 дней.")
 
+
 def notification_already_sent_today():
     return False
 
+
 def mark_notification_as_sent_today():
     pass
+
 
 def add_user(email, password):
     with app.app_context():
@@ -120,17 +137,17 @@ def add_user(email, password):
         db.session.commit()
         logging.info(f'User {email} has been created.')
 
+
 @app.route('/yandex_bot_webhook', methods=['POST'])
 def yandex_bot_webhook():
     data = request.json
     logging.info(f"Получено сообщение: {data}")
-
     if 'message' in data:
         message_text = data['message']['text']
         if message_text.lower() == 'повторить':
             check_certificates_and_send_notification()
-
     return jsonify({"status": "ok"})
+
 
 @app.route('/update_certificate/<int:certificate_id>', methods=['POST'])
 @login_required
@@ -146,6 +163,7 @@ def update_certificate(certificate_id):
     logging.info(f"Updated certificate {certificate_id} for {certificate.hostname}")
     return redirect(url_for('view_certificates'))
 
+
 @app.route('/test_notification', methods=['GET'])
 @login_required
 def test_notification():
@@ -153,9 +171,11 @@ def test_notification():
     response = send_yandex_notification(message)
     return jsonify(response)
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/view_certificates', methods=['GET'])
 @login_required
@@ -164,12 +184,14 @@ def view_certificates():
         certificates = get_all_certificates()
     return render_template('certificates.html', certificates=certificates)
 
+
 @app.route('/view_expiring_certificates', methods=['GET'])
 @login_required
 def view_expiring_certificates():
     with app.app_context():
         expiring_certificates = get_expiring_certificates_within_days(60)
     return render_template('certificates.html', certificates=expiring_certificates)
+
 
 @app.route('/add_certificate', methods=['POST'])
 @login_required
@@ -184,6 +206,7 @@ def add_cert():
     logging.info(f"Added certificate for {hostname} expiring on {expiration_date}")
     return redirect(url_for('index'))
 
+
 @app.route('/edit_certificate/<int:certificate_id>', methods=['GET', 'POST'])
 @login_required
 def edit_certificate(certificate_id):
@@ -192,13 +215,16 @@ def edit_certificate(certificate_id):
         certificate.hostname = request.form['hostname']
         certificate.common_name = request.form['common_name']
         expiration_date_str = request.form['expiration_date']
-        certificate.expiration_date = datetime.strptime(expiration_date_str, '%Y-%m-%d')
+        certificate.expiration_date = datetime.strptime(
+            expiration_date_str, '%Y-%m-%d'
+        )
         certificate.serial_number = request.form['serial_number']
         db.session.commit()
         flash('Certificate updated successfully.', 'success')
         logging.info(f"Updated certificate {certificate_id} for {certificate.hostname}")
         return redirect(url_for('view_certificates'))
     return render_template('edit_certificate.html', certificate=certificate)
+
 
 @app.route('/delete_certificate/<int:certificate_id>', methods=['POST'])
 @login_required
@@ -218,7 +244,9 @@ def edit_user(user_id):
     if request.method == 'POST':
         user.email = request.form['email']
         if request.form['password']:
-            user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
+            user.password = generate_password_hash(
+                request.form['password'], method='pbkdf2:sha256'
+            )
         db.session.commit()
         flash('User updated successfully.', 'success')
         logging.info(f"User {user.email} updated successfully.")
@@ -253,12 +281,14 @@ def login():
             logging.warning(f"Failed login attempt for {email}.")
     return render_template('login2.0.html')
 
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     flash('Logged out successfully.', 'info')
     return redirect(url_for('login'))
+
 
 @app.route('/export_certificates', methods=['GET'])
 @login_required
@@ -299,14 +329,18 @@ def user_admin():
 
 # Инициализация планировщика
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=check_certificates_and_send_notification, trigger="interval", days=1)
+scheduler.add_job(
+    func=check_certificates_and_send_notification,
+    trigger="interval",
+    days=1
+)
 scheduler.start()
 
 # Завершение работы планировщика при завершении приложения
 atexit.register(lambda: scheduler.shutdown())
 
 # Отправка уведомления сразу при запуске приложения
-#check_certificates_and_send_notification()
+# check_certificates_and_send_notification()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
