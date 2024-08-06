@@ -109,11 +109,11 @@
 <body>
     <div class="container">
         <div class="logout">
-            <a href="/logout">Выход</a>
+            <a href="{{ url_for('logout') }}">Выход</a>
         </div>
         <div class="form">
             <h2>Добавление сертификата</h2>
-            <form action="/add_certificate" method="POST">
+            <form action="{{ url_for('add_cert') }}" method="POST">
                 <input type="text" name="hostname" placeholder="Наименование" required><br>
                 <input type="text" name="common_name" placeholder="Кем выпущен" required><br>
                 <input type="date" name="expiration_date" placeholder="Дата истечения" required><br>
@@ -122,9 +122,9 @@
             </form>
         </div>
         <div class="menu">
-            <a href="/view_certificates">Просмотр всех сертификатов</a>
-            <a href="/view_expiring_certificates">Просмотр истекающих через 60 дней</a>
-            <a href="/export_certificates">Выгрузить сертификаты в Excel</a>
+            <a href="{{ url_for('view_certificates') }}">Просмотр всех сертификатов</a>
+            <a href="{{ url_for('view_expiring_certificates') }}">Просмотр истекающих через 60 дней</a>
+            <a href="{{ url_for('export_certificates') }}">Выгрузить сертификаты в Excel</a>
         </div>
     </div>
 </body>

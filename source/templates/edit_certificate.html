@@ -85,13 +85,12 @@
     <div class="container">
         <div class="form">
             <h2>Редактирование сертификата</h2>
-            <form action="{{ url_for('update_certificate', certificate_id=certificate.id) }}" method="POST">
-                <input type="text" name="hostname" value="{{ certificate.hostname }}" required><br>
-                <input type="text" name="common_name" value="{{ certificate.common_name }}" required><br>
-                <input type="date" name="expiration_date" value="{{ certificate.expiration_date }}" required><br>
-                <input type="text" name="serial_number" value="{{ certificate.serial_number }}" required><br>
-                <input type="submit" value="Изменить">
-            </form>
+            <form action="{{ url_for('edit_certificate', serial_number=certificate.serial_number) }}" method="post">
+        <input type="text" id="hostname" name="hostname" value="{{ certificate.hostname }}" required><br>
+        <input type="text" id="common_name" name="common_name" value="{{ certificate.common_name }}" required><br>
+        <input type="date" id="expiration_date" name="expiration_date" value="{{ certificate.expiration_date.strftime('%Y-%m-%d') }}" required><br>
+        <input type="text" id="serial_number" name="serial_number" value="{{ certificate.serial_number }}" required><br>
+        <input type="submit" value="Изменить">
         </div>
         <div class="menu">
             <a href="{{ url_for('view_certificates') }}">Все сертификаты</a>

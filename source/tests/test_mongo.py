@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from bson import ObjectId
 
-from lib.mongo_gpt import MongoDB, COLLECTION_CERTS, COLLECTION_USERS
+from lib.mongo import MongoDB, COLLECTION_CERTS, COLLECTION_USERS
 
 
 # Инициализация подключения к базе данных c тестом
@@ -13,15 +13,15 @@ class TestMongo(unittest.TestCase):
         self.mongo = MongoDB('mongodb://localhost:27017/test_base')
         self.mongo._connect()
 
-    # def tearDown(self):
-    #     self.mongo.db.drop_collection(COLLECTION_CERTS)
-    #     self.mongo.db.drop_collection(COLLECTION_USERS)
-    #     self.mongo.close_connections()
+    def tearDown(self):
+        self.mongo.db.drop_collection(COLLECTION_CERTS)
+        self.mongo.db.drop_collection(COLLECTION_USERS)
+        self.mongo.close_connections()
 
     # Тестовые функции
     def test_add_user(self):
-        email = "testuser@example.com"
-        password = "securepassword"
+        email = "v.onishchuk@centrofinans.ru"
+        password = "12345678"
         self.mongo.add_user(email, password)
         user = self.mongo.db[COLLECTION_USERS].find_one({"email": email})
         assert user is not None, "User was not added."
@@ -42,7 +42,8 @@ class TestMongo(unittest.TestCase):
     def test_get_all_certificates(self):
         certificates = self.mongo.get_all_certificates()
         assert certificates is not None, "Failed to retrieve certificates."
-        certificates_list = list(certificates)
+        certificates_list = certificates
+        print(certificates_list)
         assert isinstance(certificates_list, list), "Certificates should be a list."
         for cert in certificates_list:
             assert 'hostname' in cert, "Certificate should have hostname."
@@ -74,10 +75,12 @@ class TestMongo(unittest.TestCase):
         r = self.mongo.add_certificate(hostname, common_name, expiration_date, serial_number)
         print(r)
 
-        new_hostname = "updated.com"
+        certificate = self.mongo.db[self.mongo.collection].find_one({"serial_number": serial_number})
+        certificate_id = certificate['_id']
 
-        self.mongo.db[COLLECTION_CERTS].find_one({""})
+        new_hostname = "updated.com"
         self.mongo.update_certificate(
+            certificate_id=certificate_id,
             serial_number=serial_number,
             hostname=new_hostname,
             common_name=common_name,
@@ -95,10 +98,16 @@ class TestMongo(unittest.TestCase):
         print("test_delete_certificate passed")
 
     def test_delete_user(self):
-        user_id = '66b0750c3320f85a2c99ca4e'
+        self.mongo.add_user("email@ru", "123")
+        user = self.mongo.db[COLLECTION_USERS].find_one({"email": "email@ru"})
+        user_id = user['_id']
         self.mongo.delete_user(ObjectId(user_id))
         deleted_user = self.mongo.db[COLLECTION_USERS].find_one({"_id:": ObjectId(user_id)})
         assert deleted_user is None, "User was not deleted."
         print("test_delete_user passed")
 
+    def test_get_certificate(self):
+        self.mongo.add_certificate("hostname", "test", datetime.now(), "123")
+        r = self.mongo.get_certificate(serial_number="123")
+        assert r["serial_number"] == "123"
 
