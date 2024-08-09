@@ -35,7 +35,7 @@ app.config.update({
             'token_uri': 'https://oidc.dev.centrofinans.ru/auth/realms/master/protocol/openid-connect/token',
             'userinfo_uri': 'https://oidc.dev.centrofinans.ru/auth/realms/master/protocol/openid-connect/userinfo',
             'client_id': 'TimeCertificate',
-            'client_secret': 'W66iR5Dx8E6Hr20EU0FegWX1cpOCvVlH'
+            'client_secret': os.getenv('OIDC_CLIENT_SECRET'),
         }
     },
     # 'OIDC_ID_TOKEN_COOKIE_SECURE': False,  # Set to True for HTTPS
